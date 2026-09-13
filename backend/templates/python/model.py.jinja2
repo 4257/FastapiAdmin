@@ -18,6 +18,13 @@ class {{ class_name }}Model(ModelMixin, UserMixin):
     __tablename__: str = '{{ table_name }}'
     __table_args__: dict[str, str] = {'comment': '{{ function_name }}'}
 {% if not is_sub_entity %}
+    {% if pk_column and pk_column.column_name == 'id' %}
+    {% set pk_sa_type = pk_column|get_sqlalchemy_type %}
+    {% if pk_sa_type != 'Integer' %}
+    # 表主键类型与基类 ModelMixin.id(Integer) 不一致，显式覆盖以保持模型与库结构一致
+    id: Mapped[{{ pk_column.python_type }}] = mapped_column({{ pk_sa_type }}, primary_key=True, {% if pk_column.is_increment %}autoincrement=True, {% endif %}index=True, nullable=False, comment='{{ pk_column.column_comment or "主键ID" }}')
+    {% endif %}
+    {% endif %}
     {% for column in columns %}
     {% if column.column_name not in ['id', 'uuid', 'tenant_id', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] %}
     {% set sqlalchemy_type = column|get_sqlalchemy_type %}
@@ -33,6 +40,13 @@ class {{ class_name }}Model(ModelMixin, UserMixin):
     {{ sub_rel_list_name }} = relationship('{{ sub_model_class_name }}', back_populates='{{ parent_rel_name }}')
     {% endif %}
 {% else %}
+    {% if pk_column and pk_column.column_name == 'id' %}
+    {% set pk_sa_type = pk_column|get_sqlalchemy_type %}
+    {% if pk_sa_type != 'Integer' %}
+    # 子表主键类型与基类 ModelMixin.id(Integer) 不一致，显式覆盖以保持模型与库结构一致
+    id: Mapped[{{ pk_column.python_type }}] = mapped_column({{ pk_sa_type }}, primary_key=True, {% if pk_column.is_increment %}autoincrement=True, {% endif %}index=True, nullable=False, comment='{{ pk_column.column_comment or "主键ID" }}')
+    {% endif %}
+    {% endif %}
     {% for column in columns %}
     {% if column.column_name not in ['id', 'uuid', 'tenant_id', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] %}
     {% set sqlalchemy_type = column|get_sqlalchemy_type %}

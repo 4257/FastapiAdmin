@@ -463,6 +463,13 @@ class Jinja2TemplateUtil:
 
         for column in columns:
             if column.column_name in _BASE_MODEL_COLUMNS:
+                # id 列类型与基类主键(Integer)不一致时（如 MySQL bigint 自增/雪花 ID），
+                # 模板会显式覆盖 id 字段，此处需补上对应 SQLAlchemy 类型的导入；
+                # 其余基类字段（uuid/审计字段等）由 ModelMixin/UserMixin 提供，无需导入
+                if column.column_name == "id" and column.is_pk:
+                    pk_type_import = cls.get_sqlalchemy_type(column).split("(")[0].strip()
+                    if pk_type_import and pk_type_import != "Integer":
+                        import_list.add(f"from sqlalchemy import {pk_type_import}")
                 continue
             if column.column_type:
                 data_type = cls.get_db_type(column.column_type)
