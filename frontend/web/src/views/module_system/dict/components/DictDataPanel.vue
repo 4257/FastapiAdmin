@@ -561,10 +561,6 @@ const { submitLoading, handleCloseDialog, handleOpenDialog, handleSubmit } =
     },
   });
 
-onMounted(() => {
-  if (props.dictTypeId) getData();
-});
-
 async function handleSearchBarSearch(params: DictDataSearchForm) {
   await searchBarRef.value?.validate?.();
   replaceSearchParams({

@@ -150,7 +150,8 @@ import FaDescriptions from "@/components/display/fa-descriptions/index.vue";
 import FaForm from "@/components/forms/fa-form/index.vue";
 
 defineOptions({
-  name: "Version",
+  // 与菜单 route_name 一致：KeepAlive 的 include/exclude 按组件 name 匹配
+  name: "ModuleVersion",
   inheritAttrs: false,
 });
 

@@ -345,7 +345,8 @@ import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
 import { redirectToLogin, dataURLToFile } from "@utils";
 
-defineOptions({ name: "UserProfile" });
+// 与路由 name 一致：KeepAlive 的 include/exclude 按组件 name 匹配
+defineOptions({ name: "FastlinkProfile" });
 
 const { t } = useI18n();
 const userStore = useUserStore();

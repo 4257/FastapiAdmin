@@ -368,6 +368,9 @@ import type { FormItemRule, FormRules } from "element-plus";
 import type { SearchFormItem } from "@/components/forms/fa-search-bar/index.vue";
 import type FaSearchBar from "@/components/forms/fa-search-bar/index.vue";
 
+// 与菜单 route_name 一致：KeepAlive 的 include/exclude 按组件 name 匹配
+defineOptions({ name: "WorkflowTransfer", inheritAttrs: false });
+
 // ── 存储源 ────────────────────────────────────────────────────────────
 const sources = ref<SourceTable[]>([]);
 const sourceMap = computed<Record<number, SourceTable>>(() => {

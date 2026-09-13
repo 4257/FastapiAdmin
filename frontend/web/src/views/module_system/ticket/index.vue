@@ -407,7 +407,8 @@ import FaDescriptions from "@/components/display/fa-descriptions/index.vue";
 import FaCardGrid from "@/components/cards/fa-card-grid/index.vue";
 
 defineOptions({
-  name: "TicketCard",
+  // 与菜单 route_name 一致：KeepAlive 的 include/exclude 按组件 name 匹配
+  name: "ModuleTicket",
   inheritAttrs: false,
 });
 

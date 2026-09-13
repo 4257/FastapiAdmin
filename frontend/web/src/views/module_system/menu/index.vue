@@ -255,7 +255,9 @@
 
 <script setup lang="ts">
 defineOptions({
-  name: "SysMenu",
+  // 与菜单 route_name 一致：KeepAlive 的 include/exclude 按组件 name 匹配
+  // eslint-disable-next-line vue/no-reserved-component-names -- 须与后端菜单 route_name 对齐；本组件仅由路由加载，不作为模板标签使用
+  name: "Menu",
   inheritAttrs: false,
 });
 

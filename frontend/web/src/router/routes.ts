@@ -10,7 +10,7 @@
  */
 import type { AppRouteRecordRaw } from "@utils";
 import type { AppRouteRecord, RouteMeta } from "@/types/router";
-import { defineComponent, h, KeepAlive, onMounted, ref, type VNode } from "vue";
+import { computed, defineComponent, h, KeepAlive, onMounted, ref, type VNode } from "vue";
 import { RouterView, useRoute } from "vue-router";
 import { $t } from "@/locales";
 import { useWorktabStore } from "@stores";
@@ -146,20 +146,34 @@ export const NestedRouterParent = defineComponent({
   setup() {
     const route = useRoute();
     const worktabStore = useWorktabStore();
+
+    /** 当前叶子组件名：KeepAlive 的 include/exclude 按「组件 name」匹配，不能用路由 name */
+    const leafComponentName = computed(() => {
+      const comp = route.matched[route.matched.length - 1]?.components?.default as
+        | { name?: string; __name?: string }
+        | undefined;
+      return comp?.name ?? comp?.__name ?? "";
+    });
+
+    /**
+     * 关闭标签由工作栏的 keepAliveExclude 负责清理；
+     * meta.keepAlive === false 的叶子额外追加自身组件名使其不进缓存。
+     * 这里始终渲染 KeepAlive：若按当前路由 keepAlive 做 v-if 开关，卸载 KeepAlive
+     * 会把其余叶子的缓存一并销毁，导致切回时重新挂载（接口重复请求）。
+     */
+    const innerExclude = computed(() => {
+      const base = worktabStore.keepAliveExclude ?? [];
+      if (route.meta.keepAlive === false && leafComponentName.value) {
+        return [...base, leafComponentName.value];
+      }
+      return base;
+    });
+
     return () =>
       h(RouterView, null, {
         default: ({ Component }: { Component?: VNode }) => {
           if (!Component) return null;
-          // 内层 KeepAlive（v-slot 模式）：按叶子组件名缓存，与工作栏 tab.name 一致，
-          // 关闭标签时由 keepAliveExclude 精确清除；meta.keepAlive === false 时不缓存叶子
-          if (route.meta.keepAlive !== false) {
-            return h(
-              KeepAlive,
-              { exclude: worktabStore.keepAliveExclude },
-              { default: () => h(Component) }
-            );
-          }
-          return h(Component);
+          return h(KeepAlive, { exclude: innerExclude.value }, { default: () => h(Component) });
         },
       });
   },

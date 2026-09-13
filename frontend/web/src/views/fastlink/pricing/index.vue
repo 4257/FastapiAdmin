@@ -125,7 +125,8 @@ import { ref, computed, onMounted } from "vue";
 import { ElMessage } from "element-plus";
 import { Check } from "@element-plus/icons-vue";
 
-defineOptions({ name: "DashboardPricing" });
+// 与路由 name 一致：KeepAlive 的 include/exclude 按组件 name 匹配
+defineOptions({ name: "FastlinkPricing" });
 
 // ─── Mock Types ───
 
