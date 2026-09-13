@@ -101,6 +101,31 @@ function resolveOutletComponentName(path: string): string {
   }
 }
 
+/**
+ * 开发期守卫：目录路由一旦挂了组件，本出口的深度跳级就会失效。
+ *
+ * 正常情况下 `matched[1]` 是目录记录（无 `components`），RouterView 会跳过它、直达叶子；
+ * 若 `matched[1]` 带 `components` 且后面还有更深的记录，说明中间层挂了组件 —— 本出口
+ * 渲染的将是那个目录组件，KeepAlive 的 include/exclude 全部落空，叶子被重复挂载、
+ * 接口重复请求。菜单侧由 MenuProcessor / RouteTransformer 保证目录 component 为空，
+ * 这里做运行时兜底自检（仅开发环境）。
+ */
+watch(
+  () => route.path,
+  (path) => {
+    if (!import.meta.env.DEV) return;
+    const matched = router.resolve({ path }).matched;
+    const shell = matched[1] as { path?: string; components?: Record<string, unknown> } | undefined;
+    if (matched.length > 2 && shell?.components?.default) {
+      console.warn(
+        `[路由缓存] "${path}" 的中间层路由 "${shell.path ?? ""}" 挂了组件，RouterView 深度跳级失效：` +
+          "本出口渲染的是它而不是叶子页面，页面会被重复挂载。目录路由的 component 必须为 undefined。"
+      );
+    }
+  },
+  { immediate: true }
+);
+
 const isNarrowViewport = useMediaQuery("(max-width: 800px)");
 const backtopScrollTarget = computed(() => (isNarrowViewport.value ? "" : "#app-content"));
 const backtopTargetKey = computed(() => (isNarrowViewport.value ? "win" : "main"));
