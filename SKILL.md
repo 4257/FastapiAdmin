@@ -140,3 +140,38 @@ pnpm build        # 构建
 - 跨端需求（web + 小程序）要同时评估 `frontend/web` 与 `frontend/app` 两套代码，API 层各自维护
 - 小程序侧有自己的 skills（`frontend/app/.agents/skills/`），改小程序 UI 时遵循 wot-ui 约定
 - 文档站改动记得中英两份（`src/guide/` 与 `src/en/guide/`）
+
+## 9. 前端产物验证（dist）
+
+**源码已修 ≠ 部署已修。** dist 是生成物、不入库（`.gitignore`），但仓库内存在多份预构建副本并直接被打进部署，改完前端源码必须重建并同步，否则线上仍跑旧行为（AI chat 重复「连接成功」就因此漏判过一轮：源码 `e39a369b` 已修，三份 dist 仍停在修复前）。
+
+**三份产物与各自的服务入口**
+
+| 产物 | 服务入口 |
+| --- | --- |
+| `frontend/web/dist` | 构建输出（`pnpm build:prod` 的 outDir） |
+| `docker/nginx/web/dist` | docker 部署的 `/web`（`nginx.conf` 的 `alias /usr/share/nginx/html/web/dist`） |
+| `backend/dist` | 一体化部署时 `app.frontend("/")` 托管（`path_conf.FRONTEND_DIST_DIR`） |
+
+移动端同理：`docker/nginx/app/dist/build/h5`（nginx 的 `/app`）。
+
+**重建 + 同步**
+
+```bash
+cd frontend/web && pnpm build:prod          # 输出 frontend/web/dist
+cd ../.. && rsync -a --delete frontend/web/dist/ docker/nginx/web/dist/ \
+              && rsync -a --delete frontend/web/dist/ backend/dist/
+```
+
+必须带 `--delete`：产物文件名带 content hash，不带会把旧 chunk 留在目录里。
+
+**验证要核到产物，不能只看 `src/`**（minify 后函数名/注释会丢，但 `WebSocket.CLOSED` 这类属性访问、以及提示文案字符串会保留）：
+
+```bash
+grep -l "ai/chat/ws" docker/nginx/web/dist/js/*.js                    # 定位 chunk
+grep -oE '.{0,60}readyState.{0,60}' <chunk> | grep -i websocket       # 核守卫（-oE 重复上限 255）
+```
+
+例：旧包 `if (ws?.readyState === WebSocket.OPEN) return;`（`CLOSED` 命中 0 次）；修复后 `if (ws && ws.readyState !== WebSocket.CLOSED) return;`。
+
+**收到「源码没改好」的线上反馈时，第一步先核 dist 产物特征字符串**，再回源码；docker 部署还要重新打镜像/重传 `docker` 目录才算生效。
