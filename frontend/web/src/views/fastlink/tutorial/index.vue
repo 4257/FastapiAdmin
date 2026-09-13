@@ -1065,7 +1065,8 @@ import { MANUAL_MODULES_AFTER_SYSTEM, MANUAL_SYSTEM_TAIL_PAGES } from "./manualS
 import { manualModuleMatchesQuery, manualPageMatchesQuery } from "./manualTocSearch";
 import DOMPurify from "dompurify";
 
-defineOptions({ name: "DashboardTutorial" });
+// 与路由 name 一致：KeepAlive 的 include/exclude 按组件 name 匹配
+defineOptions({ name: "FastlinkTutorial" });
 
 const { t } = useI18n();
 

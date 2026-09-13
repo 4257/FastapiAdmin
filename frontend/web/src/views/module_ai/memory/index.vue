@@ -141,7 +141,8 @@
 
 <script setup lang="ts">
 defineOptions({
-  name: "ChatSession",
+  // 与菜单 route_name 一致：KeepAlive 的 include/exclude 按组件 name 匹配
+  name: "Memory",
   inheritAttrs: false,
 });
 

@@ -184,7 +184,8 @@ import FaFileBrowserDialog from "./components/FaFileBrowserDialog.vue";
 import { protocolColor, protocolLabel } from "./components/protocol.ts";
 
 defineOptions({
-  name: "Workflow",
+  // 与菜单 route_name 一致：KeepAlive 的 include/exclude 按组件 name 匹配
+  name: "WorkflowFlow",
   inheritAttrs: false,
 });
 

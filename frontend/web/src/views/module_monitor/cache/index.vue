@@ -281,7 +281,8 @@ import CacheAPI, {
 import { echarts } from "@/plugins/echarts";
 import { useWindowSize } from "@vueuse/core";
 
-defineOptions({ name: "CacheMonitor" });
+// 与菜单 route_name 一致：KeepAlive 的 include/exclude 按组件 name 匹配
+defineOptions({ name: "MonitorCache" });
 
 const activeTab = ref("0");
 

@@ -237,7 +237,8 @@ import { useConfigStore } from "@stores";
 import ParamTabPane from "./components/ParamTabPane.vue";
 import ParamFieldCard from "./components/ParamFieldCard.vue";
 
-defineOptions({ name: "ParamsSettings" });
+// 与菜单 route_name 一致：KeepAlive 的 include/exclude 按组件 name 匹配
+defineOptions({ name: "Params" });
 
 const configStore = useConfigStore();
 const activeTab = ref("brand");

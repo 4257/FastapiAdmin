@@ -188,7 +188,8 @@
 <script lang="ts" setup>
 import ServerAPI, { type ServerInfo } from "@/api/module_monitor/server";
 
-defineOptions({ name: "ServerMonitor" });
+// 与菜单 route_name 一致：KeepAlive 的 include/exclude 按组件 name 匹配
+defineOptions({ name: "MonitorServer" });
 
 const server = ref<ServerInfo>({
   cpu: { cpu_num: 0, used: 0, sys: 0, free: 0 },
