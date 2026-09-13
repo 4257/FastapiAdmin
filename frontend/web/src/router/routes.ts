@@ -10,10 +10,9 @@
  */
 import type { AppRouteRecordRaw } from "@utils";
 import type { AppRouteRecord, RouteMeta } from "@/types/router";
-import { computed, defineComponent, h, KeepAlive, onMounted, ref, type VNode } from "vue";
-import { RouterView, useRoute } from "vue-router";
+import { defineComponent, h, onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
 import { $t } from "@/locales";
-import { useWorktabStore } from "@stores";
 import LayoutComponent from "@/layouts/index.vue";
 import DashboardWorkplace from "@views/dashboard/workplace/index.vue";
 import DashboardAnalysis from "@views/dashboard/analysis/index.vue";
@@ -140,50 +139,8 @@ export const ROOT_LAYOUT_ROUTE_NAME = "RootLayout" as const;
 /** 首页子路由 name（面包屑组件会用） */
 export const HOME_ROUTE_NAME = "Home" as const;
 
-/** 纯 RouterView 占位组件 —— 多级目录只需要嵌一层，不需要实际页面 */
-export const NestedRouterParent = defineComponent({
-  name: "NestedRouterParent",
-  setup() {
-    const route = useRoute();
-    const worktabStore = useWorktabStore();
-
-    /** 当前叶子组件名：KeepAlive 的 include/exclude 按「组件 name」匹配，不能用路由 name */
-    const leafComponentName = computed(() => {
-      const comp = route.matched[route.matched.length - 1]?.components?.default as
-        | { name?: string; __name?: string }
-        | undefined;
-      return comp?.name ?? comp?.__name ?? "";
-    });
-
-    /**
-     * 关闭标签由工作栏的 keepAliveExclude 负责清理；
-     * meta.keepAlive === false 的叶子额外追加自身组件名使其不进缓存。
-     * 这里始终渲染 KeepAlive：若按当前路由 keepAlive 做 v-if 开关，卸载 KeepAlive
-     * 会把其余叶子的缓存一并销毁，导致切回时重新挂载（接口重复请求）。
-     */
-    const innerExclude = computed(() => {
-      const base = worktabStore.keepAliveExclude ?? [];
-      if (route.meta.keepAlive === false && leafComponentName.value) {
-        return [...base, leafComponentName.value];
-      }
-      return base;
-    });
-
-    return () =>
-      h(RouterView, null, {
-        default: ({ Component }: { Component?: VNode }) => {
-          if (!Component) return null;
-          return h(KeepAlive, { exclude: innerExclude.value }, { default: () => h(Component) });
-        },
-      });
-  },
-});
-
 /** 后端菜单中 component: "/index/index" = 使用 Layout 框架 */
 export const ROUTE_COMPONENT_LAYOUT = "/index/index";
-
-/** 多级目录父级占位 component */
-export const ROUTE_COMPONENT_NESTED_PARENT = "/nested/router-view-parent";
 
 /** 登录页的备用 path（守卫判断用） */
 export const ROUTE_PATH_LOGIN_ALT = "/auth/login";
@@ -292,7 +249,6 @@ export const staticRoutes: AppRouteRecordRaw[] = [
         path: "dashboard",
         name: "Dashboard",
         redirect: "/dashboard/workplace",
-        component: NestedRouterParent,
         meta: DASHBOARD_PARENT_META,
         children: dashboardLayoutChildren,
       },
@@ -300,7 +256,6 @@ export const staticRoutes: AppRouteRecordRaw[] = [
       {
         path: "fastlink",
         name: "Fastlink",
-        component: NestedRouterParent,
         meta: { hidden: true },
         children: [
           {
