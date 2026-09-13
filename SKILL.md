@@ -106,7 +106,7 @@ pnpm build        # 构建
 - 路由：静态壳路由在 `router/routes.ts`；业务路由来自后端菜单（`guards.ts` → `MenuProcessor` → `RouteRegistry` 动态 addRoute）。新增页面要在「菜单管理」配置 route_path/route_name/component_path/keep_alive
 - KeepAlive 与工作栏按「组件名」匹配：`defineOptions({ name })` 必须与菜单的 route_name 一致，否则页面缓存/缓存排除（exclude）会失灵
 - 有副作用页面（WebSocket/定时器/全局事件监听）必须实现 `onActivated`/`onDeactivated`：deactivated 时释放资源，activated 时按需恢复。`onUnmounted` 只在缓存被驱逐时触发，不能作为唯一清理点（详见第 7 节）
-- 缓存键默认 `name + params`；依赖 query 的页面用菜单 meta `remountOnFullPath`（见 `layouts/fa-page-content/index.vue` 的 `routeLeafCacheKey`）
+- 路由视图缓存为**单层**：目录路由不挂组件，`KeepAlive` 只存在于 `layouts/fa-page-content/index.vue` 一处，缓存键是叶子路由 `path`（query 变化不重挂载，改键逻辑见同文件 `routeViewCacheKey`）
 - 环境变量：公共 `.env`（`VITE_APP_BASE_API=/api/v1` 请求前缀、`VITE_PORT=5180`）；`.env.development`（`VITE_API_BASE_URL=http://127.0.0.1:8001` 代理目标；AI WebSocket `VITE_APP_WS_ENDPOINT=ws://localhost:8001` 直连）
 - WebSocket 鉴权（AI chat）：token 经 `Sec-WebSocket-Protocol` 传 `["access_token", "access_token." + jwt]`，后端在握手阶段 `websocket_authenticate` 校验
 - 图标：`FaSvgIcon` + iconify（`ri:` / `ep:` / `line-md:`）；i18n 用 `$t(...)`
@@ -131,6 +131,7 @@ pnpm build        # 构建
 - KeepAlive 内部缓存无法从外部直接清空，唯一手段是改变 `include`/`exclude` 触发内部 prune。登出场景由 `worktab.store.ts` 的 `clearAll()` 把待删标签组件名写入 `keepAliveExclude` 驱逐旧实例（下次 `openTab` 的 `removeKeepAliveExclude` 自动移出），改 store 时勿删这段
 - WebSocket 守卫必须覆盖握手期：`if (ws && ws.readyState !== WebSocket.CLOSED) return`。只挡 `OPEN` 会在 CONNECTING 期间重入时创建新连接并覆盖旧引用，泄漏的连接照样握手成功并弹提示（AI chat 曾因此登出→登录后出现多条 ws + 多条「连接成功」）
 - 主动断开先摘 `onopen/onmessage/onerror/onclose` 回调再 `close()`，避免关闭竞态触发提示或状态回调
+- 路由出口 KeepAlive **只能有一层**，且不要给它加 `:max`：动态目录路由的 `component` 必须保持 `undefined`（`MenuProcessor.mapMenuNode` / `RouteTransformer.handleNormalRoute`），靠 vue-router 的 RouterView 深度跳级直达叶子页面。历史上给目录挂过壳组件（`NestedRouterParent`），壳实例会随缓存同时存活多份、同一页面被重复挂载，导致切换菜单时接口重复请求；`:max` 的 LRU 则会在标签仍打开时挤掉最早的页面，切回时同样无谓重挂载。缓存集合只由 `include`/`exclude` 表达
 - 排查「重复弹窗/重复连接/重复请求」类 bug 的路径：先 grep 提示文案定位全库唯一来源（N 次弹窗 = N 个实例或 N 次重入）→ 查 KeepAlive include/exclude 计算与登出→登录导航链（登录守卫 404→replace 重定向会叠加竞态窗口）→ 菜单配置查 `backend/sql/sys_menu.json`（确认 route_name 唯一、keep_alive）排除后端
 
 ## 8. 已知注意点
